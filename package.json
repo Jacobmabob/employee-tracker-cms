@@ -1,0 +1,27 @@
+{
+  "name": "employee-tracker-cms",
+  "version": "1.0.0",
+  "description": "A command line CMS for creating/updating an employee database",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jacobmabob/employee-tracker-cms.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jacobmabob/employee-tracker-cms/issues"
+  },
+  "homepage": "https://github.com/Jacobmabob/employee-tracker-cms#readme",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "inquirer": "^8.2.0",
+    "jest": "^27.3.1",
+    "mysql2": "^2.3.3-rc.0"
+  }
+}
