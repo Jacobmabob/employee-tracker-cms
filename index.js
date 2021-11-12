@@ -4,6 +4,16 @@ const jest = require('jest');
 
 const table = require('console.table');
 
+const db = mysql.createConnection(
+    {
+      host: 'localhost',
+      user: 'root',
+      password: 'mozambiquehere333!',
+      database: 'employeecms_db'
+    },
+    console.log(`Connected to the Employee CMS database.`)
+  );
+
 
 
 
