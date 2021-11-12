@@ -20,7 +20,8 @@ function mainMenu() {
                 'Add a department', 
                 'Add a role', 
                 'Add an employee', 
-                'Update and employee role'
+                'Update an employee role',
+                'Quit'
             ]
         }])
         .then((answers) => console.log(answers.next))
