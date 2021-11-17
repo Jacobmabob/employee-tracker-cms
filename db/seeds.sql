@@ -1,6 +1,6 @@
 INSERT INTO departments (department_name)
 VALUES ('Management'),
-       ('Accouting'),
+       ('Accounting'),
        ('Human Resources'),
        ('Sales'),
        ('Shipping and Logistics');

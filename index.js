@@ -4,7 +4,6 @@ const db = require('./helpers/db_class');
 
 
 
-
 function mainMenu() {
     inquirer
         .prompt([{
@@ -27,56 +26,46 @@ function mainMenu() {
             console.log(answers.next)
             menuSelect(answers);
         })
-     
+        .then(() => {
+            db.refreshCurrentDepartments()
+            
+        })
+         
 }
 
 
 
 function menuSelect(answers) {
-  const nextStep = answers.next;
+    const nextStep = answers.next;
 
-  switch (nextStep) {
-    case 'View all departments':
-      db.viewDepartments()
-      break
-    case 'View all roles':
-      db.viewRoles()
-      break
-    case 'View all employees':
-      db.viewEmployees()
-      break
-    case 'Add a department':
-      addDepartment()
-      break
-    case 'Add a role':
-      addRole()
-      break
-    case 'Add an employee':
-      addEmployee()
-      break
-    case 'Update an employee role':
-      updateEmployeeRole()
-      break
-    case 'Quit':
-      break
-  }
+    switch (nextStep) {
+        case 'View all departments':
+        db.viewDepartments()
+        break
+        case 'View all roles':
+        db.viewRoles()
+        break
+        case 'View all employees':
+        db.viewEmployees()
+        break
+        case 'Add a department':
+        addDepartment()
+        break
+        case 'Add a role':
+        addRole()
+        break
+        case 'Add an employee':
+        addEmployee()
+        break
+        case 'Update an employee role':
+        updateEmployeeRole()
+        break
+        case 'Quit':
+        break
+    }
 }
 
 
-// functions for viewing tables
-
-function viewDeptartments() {
-    // displays table that shows all departments and coorespoding department id
-};
-
-function viewRoles() {
-    // displays table that shows all roles (title and salary)
-};
-
-function viewEmployees() {
-    // displays table that shows all employees in a table with first and last name, department, salary and manager
-
-};
 
 
 // functions for adding/ammending tables 
@@ -112,15 +101,16 @@ function addRole() {
                 message: 'Enter a salary for the new role'
             },
             {
-                type: 'input',
-                name: 'role_title',
-                message: 'Enter a department for the new role'
+                type: 'list',
+                name: 'new_role_department',
+                message: 'Select a department for the new role',
+                choices: db.departments
             }
         ])
         .then((answers) => {
-            console.log('making new role...');
-            mainMenu()
+            db.insertRole(answers);
         })
+        .then(() => mainMenu());
 };
 
 function addEmployee() {
@@ -161,7 +151,7 @@ function updateEmployeeRole() {
             {
                 type: 'list',
                 name: 'selected_employee',
-                message: 'Select a new department for the employee',
+                message: 'Select a new role for the employee',
                 choices: []
             }
         ])
