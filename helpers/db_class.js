@@ -1,6 +1,7 @@
 const db = require('mysql2-promise')();
 const table = require('console.table');
 
+
 db.configure (
   {
     host: 'localhost',
@@ -19,27 +20,49 @@ class Database  {
   }
 
   viewDepartments(){
-    return db.query('SELECT * FROM departments', function (err, results) {
+    db.query('SELECT * FROM departments', function (err, results) {
       console.table(results);
-    });
-
+    })
+    
   }
 
   viewRoles(){
-    return db.query('SELECT * FROM roles', function (err, results) {
+
+    const sql = ` SELECT roles.role_id, 
+                  roles.title,
+                  roles.salary,
+                  departments.department_name
+                  FROM roles
+                  INNER JOIN departments
+                  ON roles.department_id = departments.id
+                `
+    db.query(sql, function (err, results) {
       console.table(results);
     });
   }
 
   viewEmployees(){
-    return db.query('SELECT * FROM employees', function (err, results) {
-      console.table(results);
+    
+    const sql = `SELECT employees.employee_id, 
+                        employees.first_name,
+                        employees.last_name,
+                        roles.title,
+                        departments.department_name,
+                        roles.salary
+                 FROM employees
+                 INNER JOIN roles on employees.role_id = roles.role_id
+                 INNER JOIN departments ON departments.id = roles.department_id
+
+                `
+
+    return db.query(sql, function (err, results) {
+      err ? console.log(err) : console.table(results);
     });
   }
 
   addDepartment(name){
-    return db.query('INSERT INTO departments (department_name) VALUES (?)', name, (err, result) => {
-      err ? console.log(err) : console.log(`Success!`)
+    db.query('INSERT INTO departments (department_name) VALUES (?)', name, (err, result) => {
+      err ? console.log(err) : console.log(`Department Added Successfully`)
     })
   }
 
@@ -51,21 +74,25 @@ class Database  {
     err ? console.log(err) : console.log(results[0].id)});
 
     
-    // console.log(role_title)
-    // console.log(role_salary)
-    // console.log(new_role_department)
 
   }
 
-  refreshCurrentDepartments(){
-      return db.query('SELECT department_name FROM departments', (err, result) => {
-      if(err) {
+   async refreshCurrentDepartments(){
+
+      db.query('SELECT department_name FROM departments', (err, result) => {
+        const departments = []
+        if(err) {
         throw err
-      }
+      } else {
+
       for (let i = 0; i < result.length; i++){
-        this.departments.push(result[i].department_name)
+        departments.push(result[i].department_name)
       }
+      console.log(departments)
+    }
+    
     })
+    
   }
 
 

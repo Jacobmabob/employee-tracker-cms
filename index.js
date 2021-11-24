@@ -1,8 +1,17 @@
 const inquirer = require('inquirer');
 const jest = require('jest');
-const db = require('./helpers/db_class');
+const mysql = require('mysql2');
+const table = require('console.table');
 
-
+db = mysql.createConnection (
+    {
+      host: 'localhost',
+      user: 'root',
+      password: 'mozambiquehere333!',
+      database: 'employeecms_db'
+    },
+    console.log(`Connected to the Employee CMS database.`)
+);
 
 function mainMenu() {
     inquirer
@@ -14,59 +23,94 @@ function mainMenu() {
                 'View all departments',
                 'View all roles', 
                 'View all employees', 
+                new inquirer.Separator(),
                 'Add a department', 
                 'Add a role', 
                 'Add an employee', 
+                new inquirer.Separator(),
                 'Update an employee role',
+                new inquirer.Separator(),
                 'Quit',
                 new inquirer.Separator()
             ]
         }])
         .then((answers) => {
-            console.log(answers.next)
-            menuSelect(answers);
-        })
-        .then(() => {
-            db.refreshCurrentDepartments()
-            
+            switch (answers.next) {
+                case 'View all departments':
+                viewDepartments();
+                break
+                case 'View all roles':
+                viewRoles()
+                break
+                case 'View all employees':
+                viewEmployees()
+                break
+                case 'Add a department':
+                addDepartment()
+                break
+                case 'Add a role':
+                addRole()
+                break
+                case 'Add an employee':
+                addEmployee()
+                break
+                case 'Update an employee role':
+                updateEmployeeRole()
+                break
+                case 'Quit':
+                break
+            }
         })
          
 }
 
 
 
-function menuSelect(answers) {
-    const nextStep = answers.next;
-
-    switch (nextStep) {
-        case 'View all departments':
-        db.viewDepartments()
-        break
-        case 'View all roles':
-        db.viewRoles()
-        break
-        case 'View all employees':
-        db.viewEmployees()
-        break
-        case 'Add a department':
-        addDepartment()
-        break
-        case 'Add a role':
-        addRole()
-        break
-        case 'Add an employee':
-        addEmployee()
-        break
-        case 'Update an employee role':
-        updateEmployeeRole()
-        break
-        case 'Quit':
-        break
-    }
+function viewDepartments() {
+    db.query('SELECT * FROM departments', function (err, results) {
+        console.table(results);
+        mainMenu();
+      })
+      
 }
 
+function viewRoles() {
+    const sql =    `SELECT roles.role_id, 
+                    roles.title,
+                    roles.salary,
+                    departments.department_name
+                    FROM roles
+                    LEFT JOIN departments
+                    ON roles.department_id = departments.id
+                    `
+    db.query(sql, function (err, results) {
+    console.table(results);
+    mainMenu();
+});
+}
 
+function viewEmployees() {
+    const sql =    `SELECT employees.id, 
+                    employees.first_name,
+                    employees.last_name,
+                    roles.title,
+                    departments.department_name,
+                    roles.salary,
+                    CONCAT (manager.first_name, ' ', manager.last_name) AS 'manager'
+                    FROM employees
+                    INNER JOIN roles on employees.role_id = roles.id
+                    INNER JOIN departments ON departments.id = roles.department_id
+                    LEFT JOIN employees AS manager ON (employees.manager_id = manager.id)
+                    `
 
+    db.query(sql, function (err, results) {
+        if (err) {
+            console.log(err)
+        }
+        console.table(results);
+        mainMenu();
+});
+}
 
 // functions for adding/ammending tables 
 
@@ -80,14 +124,29 @@ function addDepartment() {
         }
     ])
         .then((answers) => {
-            const {department_name} = answers
-            db.addDepartment(department_name);
+            db.query('INSERT INTO departments (department_name) VALUES (?)', answers.department_name , (err, result) => {
+            console.log(`Department Added Successfully`);
+            mainMenu()
+            })
         })
 };
 
 
 
 function addRole() {
+    const departments = [];
+
+    function getDepartments () {
+        db.query('SELECT department_name FROM departments', (err, result) => {
+            for (let i = 0; i < result.length; i++){
+                departments.push(result[i].department_name)
+            }
+        })
+    }
+    
+    
+    getDepartments()
+
     inquirer
         .prompt([
             {
@@ -104,16 +163,58 @@ function addRole() {
                 type: 'list',
                 name: 'new_role_department',
                 message: 'Select a department for the new role',
-                choices: db.departments
+                choices: departments
             }
         ])
         .then((answers) => {
-            db.insertRole(answers);
+
+            const { role_title, role_salary, new_role_department } = answers;
+
+            const sql = `INSERT INTO roles (title, salary, department_id) VALUES (?, ?, ?)`;
+            let dptID = 1;
+
+            db.promise().query(`SELECT id FROM departments WHERE department_name=? `, '"' + new_role_department + '"', (err, results) => {
+                if (err) {
+                    console.log(err)
+                }
+                console.log(results)
+                dptID = results[0].id;
+            })
+                .then(() => {
+                    db.query(sql, [role_title, role_salary, dptID], (err, result) => {
+                        err ? console.log(err) : mainMenu()
+                });
+            })
+            
         })
-        .then(() => mainMenu());
+       
 };
 
 function addEmployee() {
+    let roles = [];
+    let managers = [];
+    let employeeId;
+    let roleId
+
+    function getRoles () {
+        db.query('SELECT title FROM roles', (err, result) => {
+            for (let i = 0; i < result.length; i++){
+                roles.push(result[i].title)
+            }
+        })
+    }
+
+    function getManagers () {
+        db.query('SELECT first_name, last_name FROM employees', (err, result) => {
+            for (let i = 0; i < result.length; i++){
+                managers.push(result[i].first_name.concat(" " + result[i].last_name))
+            }
+        })
+    }
+
+    getRoles();
+    getManagers();
+
     inquirer
         .prompt([
             {
@@ -127,19 +228,69 @@ function addEmployee() {
                 message: 'Enter the employee\'s last name'
             },
             {
-                type: 'input',
-                name: 'employee_role',
-                message: 'Enter the employee\'s role'
+                type: 'list',
+                name: 'employee_roles',
+                message: 'Select the employee\'s role',
+                choices: roles
             },
             {
-                type: 'input',
-                name: 'first_name',
-                message: 'Enter the name of the employee\'s manager'
+                type: 'list',
+                name: 'employee_manager',
+                message: 'Select the name of the employee\'s manager',
+                choices: managers
             },
         ])
+        .then((answers) => {
+            const {first_name, last_name, employee_roles, employee_manager} = answers
+
+            const fullName = employee_manager.split(' ');
+            const firstName = fullName[0];
+            const lastName = fullName[1];
+            console.log(firstName);
+            console.log(lastName);
+
+
+            const sql =`INSERT INTO employees (first_name, last_name, role_id, manager_id)
+                        VALUES( ? , ? , ? , ? )`
+            
+            db.promise().query(`SELECT id FROM roles WHERE title = "${employee_roles}"`)
+            .then((answer) => {
+                setRole(answer[0][0].id)
+               
+            })
+            .then(() => {
+               return db.promise().query(`SELECT id FROM employees WHERE first_name = "${firstName}" AND last_name = "${lastName}"`) 
+            })
+            .then((answer) => {
+                setManager(answer[0][0].id)
+            })
+            .then(() => {
+                console.log(roleId)
+                console.log(employeeId)
+                return db.promise().query(sql, [first_name, last_name, roleId, employeeId])
+            })
+            .then((answer)=> {
+                console.log('Employee successfully added!')
+                mainMenu()
+            })
+
+        })
+    
+        
+    function setManager(value) {
+        employeeId = value;
+        console.log(employeeId)
+    }    
+
+    function setRole(value) {
+        roleId = value;
+        console.log(roleId)
+    }    
 };
 
 function updateEmployeeRole() {
+    const roles = [];
+    const employees = [];
     inquirer
         .prompt([
             {
@@ -160,4 +311,10 @@ function updateEmployeeRole() {
 
 
 
+
+
+
 mainMenu()
+
+
+
