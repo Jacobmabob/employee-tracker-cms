@@ -255,8 +255,7 @@ function addEmployee() {
             
             db.promise().query(`SELECT id FROM roles WHERE title = "${employee_roles}"`)
             .then((answer) => {
-                setRole(answer[0][0].id)
-               
+                setRole(answer[0][0].id)      
             })
             .then(() => {
                return db.promise().query(`SELECT id FROM employees WHERE first_name = "${firstName}" AND last_name = "${lastName}"`) 
